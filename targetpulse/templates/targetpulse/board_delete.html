@@ -1,0 +1,13 @@
+{% extends 'targetpulse/base.html' %}
+{% block title %}Удалить доску - TargetPulse{% endblock %}
+{% block content %}
+<h1>Удалить доску "{{ board.title }}"</h1>
+<div class="form-container">
+    <p>Вы уверены, что хотите удалить эту доску? Все задачи будут удалены.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-delete">Удалить</button>
+        <a href="{% url 'board_detail' board.id %}" class="btn btn-secondary">Отмена</a>
+    </form>
+</div>
+{% endblock %}

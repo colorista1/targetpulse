@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TargetPulse{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+    <script src="{% static 'js/timer.js' %}" defer></script>
+    <input type="hidden" name="csrfmiddlewaretoken" value="{% csrf_token %}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="{% url 'board_list' %}" class="logo">TargetPulse</a>
+            <div class="nav-links">
+                {% if user.is_authenticated %}
+                    <span class="user-info">Привет, {{ user.username }} ({{ user.groups.first.name|default:"Пользователь" }})</span>
+                    <a href="{% url 'logout' %}" class="nav-link">Выйти</a>
+                {% else %}
+                    <a href="{% url 'login' %}" class="nav-link">Войти</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    <main class="container">
+        {% block content %}
+        {% endblock %}
+    </main>
+</body>
+</html>

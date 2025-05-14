@@ -1,0 +1,22 @@
+{% extends 'targetpulse/base.html' %}
+{% block title %}Мои доски - TargetPulse{% endblock %}
+{% block content %}
+<h1>Мои доски</h1>
+<a href="{% url 'board_create' %}" class="btn btn-primary">Создать новую доску</a>
+<div class="board-grid">
+    {% for board in boards %}
+        <div class="board-card">
+            <h2>{{ board.title }}</h2>
+            <p>{{ board.description|truncatewords:20 }}</p>
+            <p class="board-status">{{ board.is_public|yesno:"Публичная,Приватная" }}</p>
+            <a href="{% url 'board_detail' board.id %}" class="btn btn-secondary">Посмотреть</a>
+            {% if user.groups.first.name == "Manager" or user == board.creator %}
+                <a href="{% url 'board_edit' board.id %}" class="btn btn-edit">Редактировать</a>
+                <a href="{% url 'board_delete' board.id %}" class="btn btn-delete">Удалить</a>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p class="empty-message">Нет досок. Создайте одну в TargetPulse!</p>
+    {% endfor %}
+</div>
+{% endblock %}
