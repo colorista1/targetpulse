@@ -13,6 +13,11 @@ class Task(models.Model):
         default='В ожидании'
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    board = models.ForeignKey('Board', on_delete=models.CASCADE, related_name='tasks', null=True, blank=True)
+    description = models.TextField(blank=True)
+    priority = models.CharField(max_length=10, choices=[('low', 'Низкий'), ('medium', 'Средний'), ('high', 'Высокий')], default='medium')
+    deadline = models.DateField(null=True, blank=True)
+    progress = models.PositiveSmallIntegerField(default=0)
 
     def __str__(self):
         return self.title
@@ -33,3 +38,13 @@ class TimeEntry(models.Model):
 
     def __str__(self):
         return f"{self.task.title} - {self.time_spent} часов"
+
+class Board(models.Model):
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    is_public = models.BooleanField(default=False)
+    creator = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_boards')
+    members = models.ManyToManyField(User, related_name='boards')
+
+    def __str__(self):
+        return self.title

@@ -2,8 +2,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
-from .models import Task, UserProfile
+from .models import Task, UserProfile, Board
 from django import forms
+from django.http import HttpResponseForbidden
+from django.urls import reverse
+from django.forms import ModelForm
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from .forms import BoardForm, TaskForm
 
 # Форма для редактирования профиля
 class ProfileForm(forms.ModelForm):
@@ -121,4 +127,131 @@ def profile_view(request):
     
 @login_required
 def board_list(request):
-    return render(request, 'targetpulse/board_list.html', {})
+    boards = Board.objects.filter(members=request.user)
+    return render(request, 'targetpulse/board_list.html', {'boards': boards})
+
+@login_required
+def board_create(request):
+    if request.method == 'POST':
+        form = BoardForm(request.POST)
+        if form.is_valid():
+            board = form.save(commit=False)
+            board.creator = request.user
+            board.save()
+            board.members.add(request.user)
+            return redirect('board_list')
+    else:
+        form = BoardForm()
+    return render(request, 'targetpulse/board_form.html', {'form': form})
+
+@login_required
+def board_edit(request, pk):
+    board = get_object_or_404(Board, pk=pk)
+    if request.user != board.creator:
+        return HttpResponseForbidden()
+    if request.method == 'POST':
+        form = BoardForm(request.POST, instance=board)
+        if form.is_valid():
+            form.save()
+            return redirect('board_list')
+    else:
+        form = BoardForm(instance=board)
+    return render(request, 'targetpulse/board_form.html', {'form': form, 'edit': True})
+
+@login_required
+def board_delete(request, pk):
+    board = get_object_or_404(Board, pk=pk)
+    if request.user != board.creator:
+        return HttpResponseForbidden()
+    if request.method == 'POST':
+        board.delete()
+        return redirect('board_list')
+    return render(request, 'targetpulse/board_confirm_delete.html', {'board': board})
+
+@login_required
+def add_member(request, pk):
+    board = get_object_or_404(Board, pk=pk)
+    if request.user != board.creator:
+        return HttpResponseForbidden()
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        user = User.objects.filter(username=username).first()
+        if user:
+            board.members.add(user)
+            return redirect('board_list')
+        else:
+            return render(request, 'targetpulse/add_member.html', {'board': board, 'error': 'Пользователь не найден'})
+    return render(request, 'targetpulse/add_member.html', {'board': board})
+
+@login_required
+def board_detail(request, pk):
+    board = get_object_or_404(Board, pk=pk)
+    if request.user not in board.members.all():
+        return HttpResponseForbidden()
+    tasks = board.tasks.all()
+    statuses = ['В ожидании', 'В работе', 'Выполнить', 'Завершено']
+    tasks_by_status = [(status, tasks.filter(status=status)) for status in statuses]
+    return render(request, 'targetpulse/board_detail.html', {
+        'board': board,
+        'tasks_by_status': tasks_by_status,
+        'statuses': statuses
+    })
+
+@login_required
+def task_create(request, board_pk):
+    board = get_object_or_404(Board, pk=board_pk)
+    if request.user not in board.members.all():
+        return HttpResponseForbidden()
+    if request.method == 'POST':
+        form = TaskForm(request.POST)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.board = board
+            task.user = request.user
+            task.save()
+            return redirect('board_detail', pk=board.pk)
+    else:
+        form = TaskForm()
+    return render(request, 'targetpulse/task_form.html', {'form': form, 'board': board})
+
+@login_required
+def task_edit(request, board_pk, task_pk):
+    board = get_object_or_404(Board, pk=board_pk)
+    task = get_object_or_404(Task, pk=task_pk, board=board)
+    if request.user not in board.members.all():
+        return HttpResponseForbidden()
+    if request.method == 'POST':
+        form = TaskForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            return redirect('board_detail', pk=board.pk)
+    else:
+        form = TaskForm(instance=task)
+    return render(request, 'targetpulse/task_form.html', {'form': form, 'board': board, 'edit': True})
+
+@login_required
+def task_delete(request, board_pk, task_pk):
+    board = get_object_or_404(Board, pk=board_pk)
+    task = get_object_or_404(Task, pk=task_pk, board=board)
+    if request.user not in board.members.all():
+        return HttpResponseForbidden()
+    if request.method == 'POST':
+        task.delete()
+        return redirect('board_detail', pk=board.pk)
+    return render(request, 'targetpulse/task_confirm_delete.html', {'task': task, 'board': board})
+
+@csrf_exempt
+@login_required
+def change_task_status(request, board_pk, task_pk):
+    if request.method == 'POST':
+        board = get_object_or_404(Board, pk=board_pk)
+        task = get_object_or_404(Task, pk=task_pk, board=board)
+        if request.user not in board.members.all():
+            return JsonResponse({'error': 'Forbidden'}, status=403)
+        new_status = request.POST.get('status')
+        if new_status in ['В ожидании', 'В работе', 'Выполнить', 'Завершено']:
+            task.status = new_status
+            task.save()
+            return JsonResponse({'success': True})
+        return JsonResponse({'error': 'Invalid status'}, status=400)
+    return JsonResponse({'error': 'Invalid request'}, status=400)
