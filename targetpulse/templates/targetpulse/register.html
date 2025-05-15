@@ -4,6 +4,7 @@
 {% block title %}Регистрация - TargetPulse{% endblock %}
 
 {% block content %}
+{% if not user.is_authenticated %}
 <div class="login-container">
     <div class="form-title">РЕГИСТРАЦИЯ</div>
     <div class="subtitle">СОЗДАТЬ НОВЫЙ АККАУНТ</div>
@@ -41,5 +42,15 @@
         <button type="submit" class="login-button">ЗАРЕГИСТРИРОВАТЬСЯ</button>
     </form>
 </div>
+{% else %}
+    <div class="login-container">
+        <div class="form-title">Вы уже зарегистрированы</div>
+        <div class="subtitle">Привет, {{ user.username }}!</div>
+        <p class="welcome-text">Вы уже авторизованы. Хотите выйти?</p>
+        <div class="welcome-actions">
+            <a href="{% url 'logout' %}" class="btn btn-primary">Выйти</a>
+        </div>
+    </div>
+{% endif %}
 
 {% endblock %}
