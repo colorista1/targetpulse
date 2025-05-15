@@ -1,0 +1,17 @@
+{% extends 'targetpulse/base.html' %}
+{% load static %}
+
+{% block title %}TargetPulse - Добро пожаловать{% endblock %}
+
+{% block content %}
+<div class="welcome-container">
+    <div class="welcome-title">Добро пожаловать в TargetPulse!</div>
+    <div class="welcome-subtitle">Ваша платформа для постановки целей и задач</div>
+    <p class="welcome-text">Присоединяйтесь к нам, чтобы начать управлять своими задачами и достигать новых высот.</p>
+
+    <div class="welcome-actions">
+        <a href="{% url 'login' %}" class="btn btn-primary">Войти</a>
+        <a href="{% url 'register' %}" class="btn btn-secondary">Зарегистрироваться</a>
+    </div>
+</div>
+{% endblock %}

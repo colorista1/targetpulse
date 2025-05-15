@@ -1,22 +1,35 @@
 {% extends 'targetpulse/base.html' %}
+{% load static %}
+
 {% block title %}Вход - TargetPulse{% endblock %}
+
 {% block content %}
-<h1>Вход</h1>
-<div class="form-container">
+<div class="login-container">
+    <div class="form-title">АВТОРИЗАЦИЯ</div>
+    <div class="subtitle">ВОЙТИ В ЛИЧНЫЙ АККАУНТ</div>
+
     <form method="post">
         {% csrf_token %}
         <div class="form-group">
-            <label for="username">Имя пользователя</label>
-            <input type="text" name="username" id="username" required>
+            <label for="email">E-mail</label>
+            <input type="email" name="email" id="email" required>
         </div>
+
         <div class="form-group">
             <label for="password">Пароль</label>
             <input type="password" name="password" id="password" required>
         </div>
+
         {% if error %}
             <p style="color: red;">{{ error }}</p>
         {% endif %}
-        <button type="submit" class="btn btn-primary">Войти</button>
+
+        <div class="forgot-password">
+            <a href="{% url 'register' %}">Нет аккаунта? Зарегистрироваться</a>
+        </div>
+
+        <button type="submit" class="login-button">ВОЙТИ</button>
     </form>
 </div>
+
 {% endblock %}

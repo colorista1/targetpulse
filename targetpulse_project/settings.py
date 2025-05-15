@@ -68,3 +68,9 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/login/'
+
+# Подключаем кастомный backend для авторизации по email
+AUTHENTICATION_BACKENDS = [
+    'targetpulse.auth_backend.EmailBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
